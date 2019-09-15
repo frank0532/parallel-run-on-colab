@@ -1,3 +1,4 @@
+from google.colab import drive
 import numpy as np
 import pandas as pd
 import datetime, pickle, os, tqdm, re, pdb, time
@@ -87,8 +88,7 @@ class CountWord():
         else:
             print("'mode' must be 'master' or 'slave'.")
 
-from google.colab import drive
-drive.mount('/content/gdrive')
 if __name__ == '__main__':
+    drive.mount('/content/gdrive')
     ai_p=CountWord(dir_name='/content/gdrive/My Drive/words_count/', mode='slave', pc_num=15)
     ai_p.count()
