@@ -90,5 +90,5 @@ class CountWord():
 
 if __name__ == '__main__':
     drive.mount('/content/gdrive')
-    ai_p=CountWord(dir_name='/content/gdrive/My Drive/words_count/', mode='slave', pc_num=15)
-    ai_p.count()
+    cw=CountWord(dir_name='/content/gdrive/My Drive/words_count/', mode='slave', pc_num=15)
+    cw.count()
