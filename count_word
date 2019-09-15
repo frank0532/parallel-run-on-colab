@@ -57,7 +57,7 @@ class CountWord():
     
     def count(self):
         if self.mode == 'master':
-            articles = os.listdir(self.dir_name + '/words/')
+            articles = os.listdir(self.dir_name + '/articles/')
             results = {'articles' : articles, 'counts':{}, 'completed':[]}
             with open(self.results_file, 'wb') as tmp:
                 pickle.dump(results, tmp)
@@ -76,7 +76,7 @@ class CountWord():
                 counts = {}
                 print(current_articles)
                 for i in range(len(current_articles)):
-                    f = open(self.dir + 'words/' + current_articles[i], 'r')
+                    f = open(self.dir + 'articles/' + current_articles[i], 'r')
                     counts[current_articles[i]] = len(re.findall('\w+', f.read()))
                     f.close()
                     time.sleep(60)
