@@ -1,0 +1,94 @@
+import numpy as np
+import pandas as pd
+import datetime, pickle, os, tqdm, re, pdb, time
+
+
+class CountWord():
+    
+    def __init__(self, dir_name='/content/gdrive/My Drive/words_count/', mode='master', pc_num=15):
+        self.dir = dir_name
+        self.mode = mode
+        self.pc_num = pc_num
+        self.batch_num = 50
+        self.dir_name = dir_name
+        self.results_file = dir_name + 'results.pkl'
+
+    def fetch(self):
+        while 1:
+            now = datetime.datetime.now()
+            if now.minute % self.pc_num == self.pc and now.second <= 15:
+                with open(self.results_file, 'rb') as tmp:
+                    results = pickle.load(tmp)
+                    left_articles = results['articles']                   
+                    sub_sp = left_articles[:self.batch_num]                    
+                    if len(sub_sp) == 0:
+                        if self.pc not in results['completed']:
+                            results['completed'].append(self.pc)
+                        print('no tasks to be arranged.')
+                    elif len(sub_sp) < self.batch_num:
+                        results['articles'] = []
+                    else:
+                        results['articles'] = results['articles'][self.batch_num:]
+                with open(self.results_file, 'wb') as tmp:
+                    pickle.dump(results, tmp)
+                break
+        return sub_sp
+    
+    def commit_fetch(self, counts):
+        while 1:
+            now = datetime.datetime.now()
+            if now.minute % self.pc_num == self.pc and now.second <= 15:
+                with open(self.results_file, 'rb') as tmp:
+                    results = pickle.load(tmp)
+                results['counts'] = {**results['counts'], **counts}
+                sub_sp = results['articles'][:self.batch_num]
+                if len(sub_sp) == 0:
+                    if self.pc not in results['completed']:
+                        results['completed'].append(self.pc)
+                    print('no tasks to be arranged.')
+                elif len(sub_sp) < self.batch_num:
+                    results['articles'] = []
+                else:
+                    results['articles'] = results['articles'][self.batch_num:]
+                with open(self.results_file, 'wb') as tmp:
+                    pickle.dump(results, tmp)
+                break
+        return sub_sp
+    
+    def count(self):
+        if self.mode == 'master':
+            articles = os.listdir(self.dir_name + '/words/')
+            results = {'articles' : articles, 'counts':{}, 'completed':[]}
+            with open(self.results_file, 'wb') as tmp:
+                pickle.dump(results, tmp)
+            return None
+        elif self.mode == 'slave':
+            private_file = '/'.join(self.dir_name.split('/')[:-2]) + '/pc.pkl'
+            if os.path.exists(private_file):
+                with open(private_file, 'rb') as tmp:
+                    self.pc = pickle.load(tmp)
+            else:
+                with open(private_file, 'wb') as tmp:
+                    self.pc = int(input('Please put in the number for this computer(such as 0,1,2,3...):'))
+                    pickle.dump(self.pc, tmp)
+            current_articles = self.fetch()
+            while 1:
+                counts = {}
+                print(current_articles)
+                for i in range(len(current_articles)):
+                    f = open(self.dir + 'words/' + current_articles[i], 'r')
+                    counts[current_articles[i]] = len(re.findall('\w+', f.read()))
+                    f.close()
+                    time.sleep(60)
+                with open(private_file, 'wb') as tmp:
+                    current_articles = self.commit_fetch(counts)
+                    if not current_articles:
+                        break
+        else:
+            print("'mode' must be 'master' or 'slave'.")
+
+from google.colab import drive
+drive.mount('/content/gdrive')
+if __name__ == '__main__':
+    ai_p=CountWord(dir_name='/content/gdrive/My Drive/words_count/', mode='slave', pc_num=15)
+    ai_p.count()
